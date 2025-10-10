@@ -1,9 +1,32 @@
+import React from "react";
 import { Button, Form, Input } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import axios from "axios";
+import userModel from "../../../models/userModel";
+import { useDispatch } from "react-redux";
+import { hideLoading, showLoading } from "../redux/alertReducer";
 
-function Login() {
-  const onFinish = (value) => {
-    console.log("The value recived from the form: ", value);
+function Register() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const onFinish = async (value) => {
+    try {
+      dispatch(showLoading());
+      const response = await axios.post("/api/user/login", value);
+      dispatch(hideLoading());
+      if (response.data.success) {
+        toast.success(response.data.message);
+        toast("Redirect to Home page");
+        localStorage.setItem("token", response.data.data);
+        navigate("/");
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      dispatch(hideLoading());
+      toast.error("Something went wrong");
+    }
   };
 
   return (
@@ -29,6 +52,6 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;
 
-// 3rd video 26min
+// 3rd video 54min
