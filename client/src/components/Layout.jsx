@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "../layout.css";
 import { Link, useLocation } from "react-router-dom";
 import { FaHome } from "react-icons/fa";
@@ -6,9 +6,17 @@ import { LuListChecks } from "react-icons/lu";
 import { FaUserDoctor } from "react-icons/fa6";
 import { CgProfile } from "react-icons/cg";
 import { BiLogOut } from "react-icons/bi";
+import { VscChromeClose } from "react-icons/vsc";
+import { FaClinicMedical } from "react-icons/fa";
+import { RiExpandRightFill } from "react-icons/ri";
+import { MdOutlineNotificationsActive } from "react-icons/md";
+import { useSelector } from "react-redux";
+import { HiMiniUsers } from "react-icons/hi2";
 
 function Layout({ children }) {
+  const { user } = useSelector((state) => state.user);
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
   const userMenu = [
     {
       name: "Home",
@@ -36,23 +44,57 @@ function Layout({ children }) {
       icon: <BiLogOut></BiLogOut>,
     },
   ];
-
-  const menuToBeRendered = userMenu;
+  const adminMenu = [
+    {
+      name: "Home",
+      path: "/",
+      icon: <FaHome />,
+    },
+    {
+      name: "Users",
+      path: "/users",
+      icon: <HiMiniUsers />,
+    },
+    {
+      name: "Doctors",
+      path: "/doctors",
+      icon: <FaUserDoctor />,
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: <CgProfile />,
+    },
+    {
+      name: "Logout",
+      path: "/logout",
+      icon: <BiLogOut />,
+    },
+  ];
+  const menuToBeRendered = user?.isAdmin ? userMenu : adminMenu;
   return (
     <div className="d-flex layout">
       <div className="d-flex main">
-        <div className="sidebar">
+        <div className={collapsed ? "collapsed-sidebar" : "sidebar"}>
           <div className="sidebar-header">
-            <h1>ጤናጣቢያ</h1>
+            {!collapsed ? <h1>My-Clinic</h1> : <FaClinicMedical />}
           </div>
           <div className="menu">
             {menuToBeRendered.map((menu) => {
               const isActve = location.pathname === menu.path;
               return (
-                <div className={`d-flex menu-item`}>
-                  <Link to={menu.path} className={isActve && "active"}>
+                <div
+                  key={menu.path}
+                  className={
+                    !collapsed
+                      ? `d-flex menu-item`
+                      : " d-flex menu-item menu-item-center"
+                  }
+                >
+                  <Link to={menu.path} className={`${isActve && "active"}`}>
                     {" "}
-                    <span className="space">{menu.icon} </span> {menu.name}
+                    <span className="space">{menu.icon} </span>{" "}
+                    {!collapsed && menu.name}
                   </Link>
                 </div>
               );
@@ -60,8 +102,27 @@ function Layout({ children }) {
           </div>
         </div>
         <div className="content">
-          <div className="header">header</div>
-          <div className="body">{children}</div>
+          <div className={!collapsed ? "header" : "header-collapsed"}>
+            <div
+              className="close-icon"
+              onClick={() => setCollapsed((prev) => !prev)}
+            >
+              <div>
+                {" "}
+                {!collapsed ? <VscChromeClose /> : <RiExpandRightFill />}
+              </div>
+            </div>
+            <div className="header-right-side">
+              <Link className="anchor me-2" to={"/profile"}>
+                {user?.name}
+              </Link>
+              <MdOutlineNotificationsActive className="me-3" />
+            </div>
+          </div>
+
+          <div className={!collapsed ? "body" : "body-collapsed"}>
+            {children}
+          </div>
         </div>
       </div>
     </div>

@@ -1,11 +1,9 @@
-import React from "react";
 import { Button, Form, Input } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
-import userModel from "../../../models/userModel";
 import { useDispatch } from "react-redux";
-import { hideLoading, showLoading } from "../redux/alertReducer";
+import { hideLoading, showLoading } from "../redux/loaderSlice";
 
 function Register() {
   const dispatch = useDispatch();

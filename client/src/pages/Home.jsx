@@ -1,9 +1,7 @@
-import React from "react";
-import axios, { Axios } from "axios";
+import axios from "axios";
 import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { showLoading, hideLoading } from "../redux/alertReducer";
-import { Spin } from "antd";
+import { useDispatch } from "react-redux";
+import { showLoading, hideLoading } from "../redux/loaderSlice";
 import Layout from "../components/Layout";
 
 function Home() {
@@ -20,7 +18,6 @@ function Home() {
           },
         }
       );
-      console.log(response.data);
     } catch (error) {
       console.log(error);
     } finally {

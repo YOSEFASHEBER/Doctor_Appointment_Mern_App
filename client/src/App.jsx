@@ -11,12 +11,11 @@ import PublicRoute from "./components/PublicRoute";
 
 function App() {
   const { loading } = useSelector((state) => state.loader);
-
   return (
     <BrowserRouter>
       {loading && (
         <div className="spinner-overlay">
-          <Spin size="large" tip="Loading..." />
+          <Spin size="large" />
         </div>
       )}
       <Toaster position="bottom-center" reverseOrder={false} />

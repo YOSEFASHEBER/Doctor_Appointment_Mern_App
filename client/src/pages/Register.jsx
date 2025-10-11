@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useDispatch } from "react-redux";
-import { hideLoading, showLoading } from "../redux/alertReducer";
+import { hideLoading, showLoading } from "../redux/loaderSlice";
 
 function Register() {
   const dispatch = useDispatch();
@@ -13,11 +13,13 @@ function Register() {
     try {
       dispatch(showLoading());
       const response = await axios.post("/api/user/register", value);
+      const response1 = await axios.post("/api/user/login", value);
       dispatch(hideLoading());
-      if (response.data.success) {
+      if (response.data.success && response1.data.success) {
         toast.success(response.data.message);
-        toast("Redirect to login page");
-        navigate("/login");
+        toast("Redirect to Home page");
+        localStorage.setItem("token", response1.data.data);
+        navigate("/");
       } else {
         toast.error(response.data.message);
       }
