@@ -5,6 +5,7 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 const router = express.Router();
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
+import Doctor from "../models/doctorModel.js";
 
 router.post("/register", async (req, res) => {
   try {
@@ -63,6 +64,7 @@ router.post("/login", async (req, res) => {
 router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
+    user.password = undefined;
     if (!user) {
       return res
         .status(200)
@@ -70,16 +72,102 @@ router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
     } else {
       res.status(200).send({
         success: true,
-        data: {
-          name: user.name,
-          email: user.email,
-        },
+        data: user,
       });
     }
   } catch (error) {
     res
       .status(500)
       .send({ message: "Error getting user info", success: false, error });
+  }
+});
+
+router.post("/apply-doctor-account", authMiddleware, async (req, res) => {
+  try {
+    const newDoctor = new Doctor({ ...req.body, status: "pending" });
+    await newDoctor.save();
+    const adminUser = await User.findOne({ isAdmin: true });
+    const unSeenNotifications = adminUser.unSeenNotifications;
+    unSeenNotifications.push({
+      type: "new-doctor-request",
+      message: `${newDoctor.firstName} ${newDoctor.lastName} has applied for a doctor account `,
+      data: {
+        doctorId: newDoctor._id,
+        name: newDoctor.firstName + " " + newDoctor.lastName,
+      },
+      onClickPath: "/admin/doctors",
+    });
+    await User.findByIdAndUpdate(
+      adminUser._id,
+      {
+        unSeenNotifications,
+      },
+      { new: true, runValidators: true }
+    );
+    res.status(200).send({
+      success: true,
+      message: "Doctor account applied Successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Error applying doctor account ",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.post("/mark-all-as-seen", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.body.userId });
+    user?.unSeenNotifications?.map((notification) => {
+      user?.seenNotifications?.push(notification);
+    });
+    user.unSeenNotifications = [];
+    await user.save();
+    user.password = undefined;
+    const updatedUser = user;
+    res.status(200).send({
+      message: "notifications set to seen",
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Error setting notification to seen",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.post("/Delete-all-notifications", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.body.userId });
+    if (user?.seenNotifications?.length === 0) {
+      user.password = undefined;
+      const updatedUser = user;
+      return res.status(200).send({
+        message: "seen notifications is empty",
+        success: true,
+        data: updatedUser,
+      });
+    }
+    user.seenNotifications = [];
+    await user.save();
+    user.password = undefined;
+    const updatedUser = user;
+    res.status(200).send({
+      message: "Seen notifications are deleted! ",
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Error deleting notifications ",
+      success: false,
+      error,
+    });
   }
 });
 

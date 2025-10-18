@@ -13,7 +13,7 @@ input {
   height: 40px !important;
 }
 
-input:focus {
+input:focus .ant-picker {
   outline: none !important;
   box-shadow: none !important;
   border: 1px solid gray !important;
@@ -25,6 +25,14 @@ label {
 }
 .ant-form-item {
   margin: 10px 0 !important ;
+}
+.ant-picker-input input {
+  border: none !important;
+}
+.ant-picker {
+  border-radius: 2px !important;
+  border: 1px solid rgba(128, 128, 128, 0.522) !important;
+  height: 40px !important;
 }
 
 .spinner-overlay {
@@ -41,10 +49,15 @@ label {
 }
 
 /* common styling */
-.card-title {
-  font-size: 1.5rem;
+.page-title {
+  font-size: 25px;
+  color: rgba(0, 0, 0, 0.833);
   font-weight: bold;
-  background-color: orangered;
+}
+.card-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.627);
 }
 .normal-text {
   font-size: 1rem;
@@ -63,7 +76,15 @@ label {
   color: white;
   font-size: 16px !important;
 }
-
+.bottom-left {
+  background-color: #005555;
+  border-color: #005555;
+  height: 40px !important;
+  width: 100%;
+  color: white;
+  font-size: 16px !important;
+  width: max-content !important;
+}
 .anchor {
   color: black !important;
   text-decoration: underline !important;
@@ -71,6 +92,7 @@ label {
 }
 .anchor:hover {
   text-decoration: underline !important;
+  cursor: pointer;
 }
 /* authentication pages */
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../layout.css";
-import { Link, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { FaHome } from "react-icons/fa";
 import { LuListChecks } from "react-icons/lu";
 import { FaUserDoctor } from "react-icons/fa6";
@@ -12,6 +12,7 @@ import { RiExpandRightFill } from "react-icons/ri";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { HiMiniUsers } from "react-icons/hi2";
+import { Avatar, Badge } from "antd";
 
 function Layout({ children }) {
   const { user } = useSelector((state) => state.user);
@@ -38,11 +39,6 @@ function Layout({ children }) {
       path: "/profile",
       icon: <CgProfile></CgProfile>,
     },
-    {
-      name: "Logout",
-      path: "/logout",
-      icon: <BiLogOut></BiLogOut>,
-    },
   ];
   const adminMenu = [
     {
@@ -65,13 +61,10 @@ function Layout({ children }) {
       path: "/profile",
       icon: <CgProfile />,
     },
-    {
-      name: "Logout",
-      path: "/logout",
-      icon: <BiLogOut />,
-    },
   ];
-  const menuToBeRendered = user?.isAdmin ? userMenu : adminMenu;
+  const menuToBeRendered = user?.isAdmin ? adminMenu : userMenu;
+  const navigate = useNavigate();
+
   return (
     <div className="d-flex layout">
       <div className="d-flex main">
@@ -99,6 +92,23 @@ function Layout({ children }) {
                 </div>
               );
             })}
+            <div
+              className={`${
+                !collapsed
+                  ? `d-flex menu-item`
+                  : " d-flex menu-item menu-item-center"
+              }`}
+              onClick={() => {
+                localStorage.clear();
+                navigate("/login");
+              }}
+            >
+              <Link to={"/logout"}>
+                {" "}
+                <span className="space">{<BiLogOut />} </span>{" "}
+                {!collapsed && "Logout"}
+              </Link>
+            </div>
           </div>
         </div>
         <div className="content">
@@ -116,7 +126,11 @@ function Layout({ children }) {
               <Link className="anchor me-2" to={"/profile"}>
                 {user?.name}
               </Link>
-              <MdOutlineNotificationsActive className="me-3" />
+              <Link to={"/notifications"}>
+                <Badge count={user?.unSeenNotifications.length}>
+                  <MdOutlineNotificationsActive className="fs-3" />
+                </Badge>
+              </Link>
             </div>
           </div>
 
