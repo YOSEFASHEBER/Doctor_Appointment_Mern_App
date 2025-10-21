@@ -2,6 +2,7 @@ import express from "express";
 import { configDotenv } from "dotenv";
 import connectDB from "./config/dbConfig.js";
 import userRoute from "./routes/userRoute.js";
+import adminRouter from "./routes/adminRoute.js";
 
 configDotenv();
 const app = express();
@@ -9,6 +10,7 @@ const port = process.env.PORT || 5000;
 connectDB();
 app.use(express.json());
 app.use("/api/user", userRoute);
+app.use("/api/admin", adminRouter);
 app.listen(port, () => {
   console.log("node server started at port:", port);
 });

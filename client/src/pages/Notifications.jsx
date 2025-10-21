@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { showLoading, hideLoading } from "../redux/loaderSlice";
 import { setUser } from "../redux/userSlice";
-import Item from "antd/es/list/Item";
 function Notifications() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
