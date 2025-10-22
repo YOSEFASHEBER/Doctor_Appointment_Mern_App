@@ -40,6 +40,23 @@ function Layout({ children }) {
       icon: <CgProfile></CgProfile>,
     },
   ];
+  const doctorMenu = [
+    {
+      name: "Home",
+      path: "/",
+      icon: <FaHome></FaHome>,
+    },
+    {
+      name: "Appointments",
+      path: "/appointments",
+      icon: <LuListChecks></LuListChecks>,
+    },
+    {
+      name: "Profile",
+      path: `/doctor/profile/${user?._id}`,
+      icon: <CgProfile></CgProfile>,
+    },
+  ];
   const adminMenu = [
     {
       name: "Home",
@@ -62,7 +79,11 @@ function Layout({ children }) {
       icon: <CgProfile />,
     },
   ];
-  const menuToBeRendered = user?.isAdmin ? adminMenu : userMenu;
+  const menuToBeRendered = user?.isAdmin
+    ? adminMenu
+    : user?.isDoctor
+    ? doctorMenu
+    : userMenu;
   const navigate = useNavigate();
 
   return (
@@ -71,6 +92,16 @@ function Layout({ children }) {
         <div className={collapsed ? "collapsed-sidebar" : "sidebar"}>
           <div className="sidebar-header">
             {!collapsed ? <h1>My-Clinic</h1> : <FaClinicMedical />}
+            {collapsed && <br />}
+            {!collapsed ? (
+              <h4>
+                {user?.isAdmin ? "Admin" : user?.isDoctor ? "Doctor" : "User"}
+              </h4>
+            ) : (
+              <h6>
+                {user?.isAdmin ? "Admin" : user?.isDoctor ? "Doctor" : "User"}
+              </h6>
+            )}
           </div>
           <div className="menu">
             {menuToBeRendered.map((menu) => {
