@@ -171,4 +171,26 @@ router.post("/Delete-all-notifications", authMiddleware, async (req, res) => {
   }
 });
 
+router.post("/get-all-approved-doctors", authMiddleware, async (req, res) => {
+  try {
+    const response = await Doctor.find({ status: "approved" }).select(
+      "-password"
+    );
+    response &&
+      res.status(200).send({
+        success: true,
+        message: "all approved doctors are featched!",
+        data: response,
+      });
+  } catch (error) {
+    res
+      .status(500)
+      .send({
+        message: "Error fetching approved doctors",
+        success: false,
+        error,
+      });
+  }
+});
+
 export default router;

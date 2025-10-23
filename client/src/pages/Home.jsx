@@ -3,14 +3,18 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { showLoading, hideLoading } from "../redux/loaderSlice";
 import Layout from "../components/Layout";
+import { useState } from "react";
+import Doctor from "../components/Doctor";
+import { Col, Row } from "antd";
 
 function Home() {
   const dispatch = useDispatch();
+  const [doctors, setDoctors] = useState([]);
   const getData = async () => {
     try {
       dispatch(showLoading());
       const response = await axios.post(
-        "/api/user/get-user-info-by-id",
+        "/api/user/get-all-approved-doctors",
         {},
         {
           headers: {
@@ -18,6 +22,8 @@ function Home() {
           },
         }
       );
+      dispatch(hideLoading());
+      response && setDoctors(response.data.data);
     } catch (error) {
       console.log(error);
     } finally {
@@ -38,7 +44,13 @@ function Home() {
   }, []);
   return (
     <Layout>
-      <h1>Home</h1>
+      <Row gutter={20}>
+        {doctors?.map((doctor) => (
+          <Col span={8} xs={24} sm={24} lg={8}>
+            <Doctor doctor={doctor} />
+          </Col>
+        ))}
+      </Row>
     </Layout>
   );
 }

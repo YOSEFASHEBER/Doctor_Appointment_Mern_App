@@ -39,4 +39,18 @@ router.post("/update-doctor-profile", authMiddleware, async (req, res) => {
   }
 });
 
+router.post("/get-doctor-info-by-id", authMiddleware, async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ _id: req.body.doctorId });
+    res.status(200).send({
+      success: true,
+      message: "Doctor info fetched successfully!",
+      data: doctor,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .send({ message: "Error geting doctor info!", success: false, error });
+  }
+});
 export default router;
