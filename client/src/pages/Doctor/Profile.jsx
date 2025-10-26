@@ -11,9 +11,11 @@ import { useEffect } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import LocalizedFormat from "dayjs/plugin/LocalizedFormat.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(LocalizedFormat);
 
 function Profile() {
   const dispatch = useDispatch();
@@ -24,18 +26,11 @@ function Profile() {
   const onFinish = async (values) => {
     try {
       dispatch(showLoading());
-
-      const formattedTimings = values.timings.map((time) =>
-        dayjs.isDayjs(time)
-          ? time.format("HH:mm")
-          : dayjs(time, "HH:mm").format("HH:mm")
-      );
       const response = await axios.post(
         "/api/doctor/update-doctor-profile",
         {
           ...values,
           userId: user._id,
-          timings: formattedTimings,
         },
         {
           headers: {
@@ -74,8 +69,8 @@ function Profile() {
         const startTime = response.data.data.timings[0];
         const endTime = response.data.data.timings[1];
         const timings = [
-          dayjs.utc(startTime, "HH:mm"),
-          dayjs.utc(endTime, "HH:mm"),
+          dayjs(startTime).format("LT"),
+          dayjs(endTime).format("LT"),
         ];
 
         response.data.data.timings = timings;

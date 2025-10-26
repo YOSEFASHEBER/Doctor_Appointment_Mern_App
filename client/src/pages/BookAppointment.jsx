@@ -1,27 +1,31 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { hideLoading, showLoading } from "../redux/loaderSlice";
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Button, Col, DatePicker, Row, TimePicker, message } from "antd";
+import { Button, Col, DatePicker, Row, TimePicker } from "antd";
+import toast from "react-hot-toast";
 
+// Extend dayjs with UTC and timezone plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function BookAppointment() {
-  const { RangePicker } = TimePicker;
+  const { user } = useSelector((state) => state.user);
   const [isAvailable, setIsAvailable] = useState(false);
   const [date, setDate] = useState(null);
-  const [selectedTimings, setSelectedTimings] = useState([]);
+  const [time, setTime] = useState(null);
   const [doctor, setDoctor] = useState(null);
+
   const dispatch = useDispatch();
   const params = useParams();
   const navigate = useNavigate();
 
+  // Fetch doctor info
   const getDoctorData = async () => {
     try {
       dispatch(showLoading());
@@ -29,24 +33,21 @@ function BookAppointment() {
         "/api/doctor/get-doctor-info-by-id",
         { doctorId: params.doctorId },
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
       dispatch(hideLoading());
 
       if (response.data.success) {
-        const startTime = dayjs(response.data.data.timings[0], "HH:mm");
-        const endTime = dayjs(response.data.data.timings[1], "HH:mm");
-
+        const startTime = dayjs.utc(response.data.data.timings[0]);
+        const endTime = dayjs.utc(response.data.data.timings[1]);
         response.data.data.timings = [startTime, endTime];
         setDoctor(response.data.data);
       }
     } catch (error) {
       dispatch(hideLoading());
+      toast.error("Failed to load doctor data.");
       console.error(error);
-      message.error("Failed to load doctor data.");
     }
   };
 
@@ -54,83 +55,100 @@ function BookAppointment() {
     getDoctorData();
   }, []);
 
+  // Helper function to get combined ISO datetimes
+  const getIsoValues = () => {
+    if (!date || !time) return null;
+
+    const combined = dayjs.tz(
+      `${date.format("YYYY-MM-DD")} ${time.format("HH:mm")}`,
+      "YYYY-MM-DD HH:mm",
+      "Africa/Addis_Ababa"
+    );
+
+    return {
+      appointmentIso: combined.utc().toISOString(), // Full ISO UTC datetime
+      dateIso: combined.utc().startOf("day").toISOString(), // Start-of-day ISO UTC
+    };
+  };
+
+  // Check availability
   const checkAvailability = async () => {
-    if (!date || selectedTimings.length !== 2) {
-      message.warning("Please select date and time range.");
+    if (!date || !time) {
+      toast.warning("Please select both date and time.");
       return;
     }
+
+    const isoValues = getIsoValues();
+    if (!isoValues) return;
+
     try {
       dispatch(showLoading());
       const response = await axios.post(
-        "/api/user/check-booking-availability",
+        "/api/user/checkBookingAvailability",
         {
           doctorId: params.doctorId,
-          date: date.format("DD-MM-YYYY"),
-          time: [
-            selectedTimings[0].format("HH:mm"),
-            selectedTimings[1].format("HH:mm"),
-          ],
+          date: isoValues.dateIso,
+          time: isoValues.appointmentIso,
         },
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
       dispatch(hideLoading());
 
       if (response.data.success) {
-        message.success(response.data.message);
+        toast.success(response.data.message);
         setIsAvailable(true);
       } else {
-        message.error(response.data.message);
+        toast.error(response.data.message);
         setIsAvailable(false);
       }
     } catch (error) {
       dispatch(hideLoading());
+      toast.error("Error checking availability.");
       console.error(error);
-      message.error("Error checking availability.");
     }
   };
 
+  // Book appointment
   const bookNow = async () => {
-    if (!isAvailable) {
-      message.warning("Please check availability first.");
+    if (!date || !time) {
+      toast.error("Please select date and time first.");
       return;
     }
+
+    const isoValues = getIsoValues();
+    if (!isoValues) return;
+
     try {
       dispatch(showLoading());
       const response = await axios.post(
         "/api/user/book-appointment",
         {
           doctorId: params.doctorId,
-          userId: JSON.parse(localStorage.getItem("user"))._id,
+          userId: user._id,
           doctorInfo: doctor,
-          userInfo: JSON.parse(localStorage.getItem("user")),
-          date: date.format("DD-MM-YYYY"),
-          time: [
-            selectedTimings[0].format("HH:mm"),
-            selectedTimings[1].format("HH:mm"),
-          ],
+          userInfo: user,
+          date: isoValues.dateIso,
+          time: isoValues.appointmentIso,
         },
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
       dispatch(hideLoading());
 
       if (response.data.success) {
-        message.success("Appointment booked successfully!");
-        navigate("/appointments");
+        toast.success("Appointment booked successfully!");
+        setIsAvailable(false);
+        // navigate("/appointments");
       } else {
-        message.error(response.data.message);
+        toast.error(response.data.message);
       }
     } catch (error) {
       dispatch(hideLoading());
+      toast.error("Failed to book appointment.");
       console.error(error);
-      message.error("Failed to book appointment.");
     }
   };
 
@@ -143,25 +161,39 @@ function BookAppointment() {
             {doctor.lastName?.toUpperCase()}
           </h1>
           <hr />
-          <Row>
+
+          <Row gutter={[16, 16]}>
             <Col span={8} sm={24} xs={24} lg={8}>
               <h1 className="normal-text">
-                <b>Available Timings:</b> {doctor.timings[0].format("HH:mm")} -{" "}
-                {doctor.timings[1].format("HH:mm")}
+                <b>Available Timings:</b>{" "}
+                {doctor?.timings?.length === 2
+                  ? `${doctor.timings[0]
+                      .tz("Africa/Addis_Ababa")
+                      .format("hh:mm A")} - 
+                     ${doctor.timings[1]
+                       .tz("Africa/Addis_Ababa")
+                       .format("hh:mm A")}`
+                  : "Not available"}
               </h1>
 
               <div className="d-flex flex-column pt-2">
                 <DatePicker
                   format="DD-MM-YYYY"
                   className="mt-2"
-                  onChange={(value) => setDate(value)}
+                  onChange={(value) => {
+                    setDate(value);
+                    setIsAvailable(false);
+                  }}
                 />
 
-                <RangePicker
-                  format="HH:mm"
-                  className="mt-3"
+                <TimePicker
+                  format="hh:mm A"
                   use12Hours
-                  onChange={(values) => setSelectedTimings(values)}
+                  className="mt-3"
+                  onChange={(value) => {
+                    setTime(value);
+                    setIsAvailable(false);
+                  }}
                 />
 
                 <Button

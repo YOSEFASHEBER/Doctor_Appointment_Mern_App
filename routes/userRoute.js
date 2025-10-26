@@ -1,11 +1,17 @@
 import express, { response } from "express";
 import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/authMiddleware.js";
-
-const router = express.Router();
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import Doctor from "../models/doctorModel.js";
+import Appointment from "../models/appointmentModel.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+const router = express.Router();
 
 router.post("/register", async (req, res) => {
   try {
@@ -183,13 +189,140 @@ router.post("/get-all-approved-doctors", authMiddleware, async (req, res) => {
         data: response,
       });
   } catch (error) {
-    res
-      .status(500)
-      .send({
-        message: "Error fetching approved doctors",
+    res.status(500).send({
+      message: "Error fetching approved doctors",
+      success: false,
+      error,
+    });
+  }
+});
+router.post("/book-appointment", authMiddleware, async (req, res) => {
+  try {
+    const { doctorId, userId, doctorInfo, userInfo, date, time } = req.body;
+    const appointmentDateTimeIso = dayjs(time).utc().toISOString();
+    const dateIso = dayjs(appointmentDateTimeIso)
+      .utc()
+      .startOf("day")
+      .toISOString();
+    const startWindow = dayjs(appointmentDateTimeIso)
+      .subtract(29, "minute")
+      .toDate();
+    const endWindow = dayjs(appointmentDateTimeIso).add(29, "minute").toDate();
+
+    const existing = await Appointment.findOne({
+      doctorId,
+      date: dateIso,
+      time: { $gte: startWindow, $lte: endWindow },
+      status: "approved",
+    });
+
+    if (existing) {
+      return res.status(200).send({
         success: false,
-        error,
+        message: "This time slot is already booked.",
       });
+    }
+
+    const newAppointment = new Appointment({
+      doctorId,
+      userId,
+      doctorInfo,
+      userInfo,
+      date: dateIso,
+      time: appointmentDateTimeIso,
+      status: "pending",
+    });
+
+    await newAppointment.save();
+
+    // notify doctor
+    const doctor = await Doctor.findById(doctorId);
+    const doctorUser = doctor ? await User.findById(doctor.userId) : null;
+    if (doctorUser) {
+      doctorUser.unSeenNotifications.push({
+        type: "new-appointment-request",
+        message: `New appointment request from ${userInfo.name} on ${dayjs(
+          appointmentDateTimeIso
+        )
+          .tz("Africa/Addis_Ababa")
+          .format("DD-MM-YYYY [at] hh:mm A")}`,
+        onClickPath: "/doctor/appointments",
+      });
+      await doctorUser.save();
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Appointment booked successfully!",
+    });
+  } catch (error) {
+    console.error("Error booking appointment:", error);
+    return res.status(500).send({
+      success: false,
+      message: "Error booking appointment!",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/checkBookingAvailability", authMiddleware, async (req, res) => {
+  try {
+    const { doctorId, date, time } = req.body;
+    const selectedTime = new Date(time);
+
+    // If frontend sent date separately, we ignore it for window calculation and derive dateIso from time.
+    const requestedTimeIso = dayjs(time).utc().toISOString();
+    const dateIso = dayjs(requestedTimeIso).utc().startOf("day").toISOString();
+
+    const startWindow = dayjs(requestedTimeIso).subtract(29, "minute").toDate();
+    const endWindow = dayjs(requestedTimeIso).add(29, "minute").toDate();
+    const doctor = await Doctor.findOne({ _id: doctorId });
+    // doctor working hours
+    const [start, end] = doctor.timings;
+    const doctorStartWindow = new Date(date);
+    const doctorEndWindow = new Date(date);
+    doctorStartWindow.setHours(
+      new Date(start).getHours(),
+      new Date(start).getMinutes(),
+      0
+    );
+    doctorEndWindow.setHours(
+      new Date(end).getHours(),
+      new Date(end).getMinutes(),
+      0
+    );
+    if (selectedTime < doctorStartWindow || selectedTime > doctorEndWindow) {
+      return res.status(200).send({
+        success: false,
+        message: "Selected time is outside of doctor's working hours.",
+      });
+    }
+
+    const overlappingAppointment = await Appointment.findOne({
+      doctorId,
+      date: dateIso,
+      time: { $gte: startWindow, $lte: endWindow },
+      status: "approved",
+    });
+
+    if (overlappingAppointment) {
+      return res.status(200).send({
+        success: false,
+        message: "This time slot is already booked.",
+      });
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Time slot is available.",
+    });
+  } catch (error) {
+    console.error("Error checking availability:", error);
+    return res.status(500).send({
+      success: false,
+      message: "Error checking availability.",
+      error: error.message,
+    });
   }
 });
 

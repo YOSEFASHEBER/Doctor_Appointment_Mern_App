@@ -53,4 +53,5 @@ router.post("/get-doctor-info-by-id", authMiddleware, async (req, res) => {
       .send({ message: "Error geting doctor info!", success: false, error });
   }
 });
+
 export default router;

@@ -1,5 +1,11 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 function Doctor({ doctor }) {
   const navigate = useNavigate();
@@ -26,7 +32,15 @@ function Doctor({ doctor }) {
       </p>
       <p>
         <b>Timings : </b>
-        {doctor.timings[0]} -{doctor.timings[1]}
+        {doctor?.timings?.length === 2
+          ? `${dayjs
+              .utc(doctor.timings[0])
+              .tz("Africa/Addis_Ababa")
+              .format("hh:mm A")} - ${dayjs
+              .utc(doctor.timings[1])
+              .tz("Africa/Addis_Ababa")
+              .format("hh:mm A")}`
+          : "Not available"}
       </p>
       <p>
         <b>Specialization : </b>

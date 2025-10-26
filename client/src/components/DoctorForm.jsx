@@ -15,7 +15,6 @@ function DoctorForm({ onFinish, initialValues }) {
   const handleFinish = (values) => {
     const formattedValues = {
       ...values,
-      timings: values.timings.map((t) => t.format("HH:mm")),
     };
     console.log("Form Submitted:", formattedValues);
     onFinish(formattedValues);
@@ -54,6 +53,20 @@ function DoctorForm({ onFinish, initialValues }) {
             rules={[{ required: true }]}
           >
             <Input placeholder="Phone Number" />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item label="Website" name="website">
+            <Input placeholder="website" />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item
+            label="Address"
+            name="address"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Address" />
           </Form.Item>
         </Col>
       </Row>

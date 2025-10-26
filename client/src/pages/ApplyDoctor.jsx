@@ -23,18 +23,18 @@ function ApplyDoctor() {
       dispatch(showLoading());
 
       // Safely convert dayjs objects to "HH:mm" strings
-      const formattedTimings = values.timings.map((time) =>
-        dayjs.isDayjs(time)
-          ? time.format("HH:mm")
-          : dayjs(time, "HH:mm").format("HH:mm")
-      );
+      // const formattedTimings = values.timings.map((time) =>
+      //   dayjs.isDayjs(time)
+      //     ? time.format("HH:mm")
+      //     : dayjs(time, "HH:mm").format("HH:mm")
+      // );
 
       const response = await axios.post(
         "/api/user/apply-doctor-account",
         {
           ...values,
           userId: user._id,
-          timings: formattedTimings,
+          // timings: formattedTimings,
         },
         {
           headers: {
