@@ -325,5 +325,26 @@ router.post("/checkBookingAvailability", authMiddleware, async (req, res) => {
     });
   }
 });
+router.post(
+  "/get-appointments-by-user-id",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const appoinments = await Appointment.find({ userId });
+      res.status(200).send({
+        success: true,
+        message: "appointments Fetched successfully",
+        data: appoinments,
+      });
+    } catch (error) {
+      res.status(500).send({
+        message: "Error geting appointments !",
+        success: false,
+        error,
+      });
+    }
+  }
+);
 
 export default router;

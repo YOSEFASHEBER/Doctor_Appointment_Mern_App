@@ -48,7 +48,7 @@ function Layout({ children }) {
     },
     {
       name: "Appointments",
-      path: "/appointments",
+      path: "/doctor/appointments",
       icon: <LuListChecks></LuListChecks>,
     },
     {
